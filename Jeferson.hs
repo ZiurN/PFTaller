@@ -1,11 +1,13 @@
 import Definitions
 
 usuariosPrueba = [(001, "Jeferson"),(002, "Juan"),(003, "Karen"),(004, "Camila"),(006, "Jhonatan")]
-publicacionesPrueba = [((001,"Jeferson"), "Publicacion de prueba de Jeferson",[]), ((004, "Camila"), "SOy Camila", [(006, "Jhonatan")]), ((003, "Karen"), "Me llamo Karen", [(002, "Juan")]), ((006, "Jhonatan"), "Otra prueba Jhonatan",[])] 
+publicacionesPrueba = [((001,"Jeferson"), "Publicacion de prueba de Jeferson",[]), ((004, "Camila"), "SOy Camila", [(006, "Jhonatan")]), ((003, "Karen"), "Me llamo Karen", [(002, "Juan")]), ((006, "Jhonatan"), "Otra prueba Jhonatan",[(001,"Jeferson")])] 
 relacionesPrueba = [ ((002, "Juan"),(003, "Karen")) , ((004, "Camila"),(006, "Jhonatan")) , ((001, "Jeferson"),(004, "Camila")) ]
 
 redSocialPrueba :: Set Usuario -> Set Relacion -> Set Publicacion -> RedSocial
 redSocialPrueba usuariosPrueba relacionesPrueba publicacionesPrueba = (usuariosPrueba, relacionesPrueba, publicacionesPrueba)
+
+redTest = (redSocialPrueba usuariosPrueba relacionesPrueba publicacionesPrueba)
 
 --redSocialPrueba = ( [(001, "Jeferson"),(002, "Juan"),(003, "Karen"),(004, "Camila"),(006, "Jhonatan")],  [((001,"Jeferson"),(003, "Karen")),((002, "Juan"),(003, "Karen")),((004, "Camila"),(006, "Jhonatan")),((001, "Jeferson"),(006, "Jhonatan"))],  [((001,"Jeferson"), "Publicacion de prueba de Jeferson", [(004, "Camila"),(006, "Jhonatan")]),((003, "Karen"), "Me llamo Karen", [(002, "Juan")]),((006, "Jhonatan"), "Otra prueba Jhonatan",[])] )
 
@@ -62,11 +64,30 @@ estaRobertoCarlos red | snd (usuarioConMasAmigos red) > 1000000 = True
 
 -- Dada una red social y un usuario retorna el conjunto de publicaciones del mismo.
 publicacionesDe :: RedSocial -> Usuario -> Set Publicacion
-publicacionesDe = undefined
+publicacionesDe red usuario = publicacionesDeAux (publicacionesDeLaRed red) usuario
+
+publicacionesDeAux :: Set Publicacion -> Usuario -> Set Publicacion
+publicacionesDeAux [] _ = []
+publicacionesDeAux (pb: pbs) usuario | usuario == autor =  pb : (publicacionesDeAux pbs usuario)
+                                     | otherwise = publicacionesDeAux pbs usuario
+                                       where autor = autorDePublicacion pb
+
+autorDePublicacion :: Publicacion -> Usuario
+autorDePublicacion (usuario, _, _) = usuario
 
 -- Dada una red social y un usuario retorna el conjunto de publicaciones a las que el usuario les dió like.
 publicacionesQueLeGustanA :: RedSocial -> Usuario -> Set Publicacion
-publicacionesQueLeGustanA = undefined
+publicacionesQueLeGustanA red usuario = publicacionesQueLeGustanAAux (publicacionesDeLaRed red) usuario
+
+
+publicacionesQueLeGustanAAux :: Set Publicacion -> Usuario -> Set Publicacion
+publicacionesQueLeGustanAAux [] _ = []
+publicacionesQueLeGustanAAux (pb:pbs) usuario | (elem usuario likes) = pb : publicacionesQueLeGustanAAux pbs usuario
+                                              | otherwise = publicacionesQueLeGustanAAux pbs usuario
+                                                where likes = likesDeLaPublicacion pb
+                                                  
+likesDeLaPublicacion :: Publicacion -> Set Usuario
+likesDeLaPublicacion (_, _, lista) = lista
 
 -- Dada una red social y dos usuarios indica si les gustan las mismas publicaciones
 lesGustanLasMismasPublicaciones :: RedSocial -> Usuario -> Usuario -> Bool
