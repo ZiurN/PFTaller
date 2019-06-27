@@ -62,6 +62,10 @@ estaRobertoCarlos :: RedSocial -> Bool
 estaRobertoCarlos red | snd (usuarioConMasAmigos red) > 1000000 = True
                       | otherwise = False
 
+-- Funcion opcional que devuelve el usuario con más amigos y el numero de amigos
+estaRobertoCarlosTupla :: RedSocial -> (Usuario, Int)
+estaRobertoCarlosTupla red = usuarioConMasAmigosAux red (usuariosDeLaRed red) (relacionesDeLaRed red) (000, "Sin Amigos")
+
 -- Dada una red social y un usuario retorna el conjunto de publicaciones del mismo.
 publicacionesDe :: RedSocial -> Usuario -> Set Publicacion
 publicacionesDe red usuario = publicacionesDeAux (publicacionesDeLaRed red) usuario

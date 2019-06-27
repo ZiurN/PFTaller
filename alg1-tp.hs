@@ -1,3 +1,7 @@
+-- Lucía Karina Grassi LU: 55/18
+-- Nicolás Scocozza Simón LU: 239/19
+-- Jeferson Osmeider Ruiz Cortes LU: 448/19
+
 -- DEFINICIONES
 type Set a = [a]
 type Usuario = (Integer, String) -- (id, nombre)
@@ -37,16 +41,6 @@ eliminaRepetidos [] = []
 eliminaRepetidos (n:xs) | elem n xs = eliminaRepetidos(xs)
  | otherwise = n : (eliminaRepetidos(xs))
 
--- Dado una red y un ID, devuelve el usuario correspondiente al ID
-getUser :: RedSocial -> Integer -> Usuario
-getUser (u:us,_,_) id 
-    | fst u == id = u
-    | otherwise = getUser (us,[],[]) id
-
--- Dada una red social y dos usuarios, indica si los usuarios son amigos. Útil para verificar rápido.
-sonAmigos :: RedSocial -> Usuario -> Usuario -> Bool
-sonAmigos (_,rs,_) u1 u2 = elem (u1,u2) rs || elem (u2,u1) rs
-
 ----------------------------------------------------------------------------------------------------------------------------
 
 -- PULIDO de definiciones base. Con el fin de asegurar que trabajamos con conjuntos, sin alterar las
@@ -69,7 +63,7 @@ publicacionesDeLaRed (us, rs, ps) = eliminaRepetidos(publicaciones (us, rs, ps))
 -- Dada una red social retorna un conjunto con los nombres de todos los usuarios.
 
 nombresDeUsuarios :: RedSocial -> Set String
-nombresDeUsuarios red =obtenerNombresDeUsuarios (usuariosDeLaRed red)
+nombresDeUsuarios red = eliminaRepetidos(obtenerNombresDeUsuarios (usuarios red))
 
 -- Función auxiliar para nombresDeUsuarios.
 -- De la tupla "usuario" obtiene la segunda componente String del usuario
@@ -122,10 +116,10 @@ usuarioConMasAmigos red = fst (usuarioConMasAmigosAux red (usuariosDeLaRed red) 
 
 usuarioConMasAmigosAux :: RedSocial -> Set Usuario -> Set Relacion -> Usuario -> (Usuario, Int)
 usuarioConMasAmigosAux red users relations user | users == [] = (user, valorActual)
-                                                | valorActual > valorLista = usuarioConMasAmigosAux red (tail users) relations user
-                                                | otherwise = usuarioConMasAmigosAux red (tail users) relations (head users)
-                                                  where valorActual = cantidadDeAmigos red user
-                                                        valorLista = cantidadDeAmigos red (head users)
+                                                       | valorActual > valorLista = usuarioConMasAmigosAux red (tail users) relations user
+                                                       | otherwise = usuarioConMasAmigosAux red (tail users) relations (head users)
+                                                         where valorActual = cantidadDeAmigos red user
+                                                               valorLista = cantidadDeAmigos red (head users)
 
 ------------------------------------------------------------------------------------------------------------------------------
 
@@ -133,9 +127,9 @@ usuarioConMasAmigosAux red users relations user | users == [] = (user, valorActu
 -- Dada una red social retorna True SI ALGÚN usuario tiene más de un millón de amigos.
 
 estaRobertoCarlos :: RedSocial -> Bool
-estaRobertoCarlos red | fst (usuarioConMasAmigos red) >= 1000000 = True
+estaRobertoCarlos red | cantidadDeAmigos red (usuarioConMasAmigos red) >= 1000000 = True
                       | otherwise = False
-
+                
 ------------------------------------------------------------------------------------------------------------------------------
 
 -- PUNTO 6: publicacionesDe
@@ -167,6 +161,7 @@ autorDePublicacion (user, _, _ ) = user
 publicacionesQueLeGustanA :: RedSocial -> Usuario -> Set Publicacion
 publicacionesQueLeGustanA red user = publicacionesQueLeGustanAAux (publicacionesDeLaRed red) user
 
+
 -- Función auxiliar para publicacionesQueLeGustanA.
 -- Se le da la lista de publicaciones y un usuario. Mira la primera publicación de la lista, si el usuario figura,
 -- lo devuelve, sino, continua con la recursión.
@@ -183,7 +178,7 @@ publicacionesQueLeGustanAAux (pb:pbs) user | (elem user likes) == True = pb : pu
 -- Dada una red social y dos usuarios indica si les gustan las mismas publicaciones.
 
 lesGustanLasMismasPublicaciones :: RedSocial -> Usuario -> Usuario -> Bool
-lesGustanLasMismasPublicaciones red user1 user2 = (publicacionesQueLeGustanA red user1) == (publicacionesQueLeGustanA red user2)
+lesGustanLasMismasPublicaciones red user1 user2 = publicacionesQueLeGustanA red user1 == publicacionesQueLeGustanA red user2
 
 ------------------------------------------------------------------------------------------------------------------------------
 
@@ -205,7 +200,8 @@ tieneUnSeguidorFiel (ufiel:us,rs,ps) user
 ------------------------------------------------------------------------------------------------------------------------------
 
 -- Opcional: existeSecuenciaDeAmigos
--- Dada una red social y dos usuarios, indica si existe una secuencia de usuarios relacionados para llegar del primero al segundo.
+-- Dada una red social y dos usuarios, indica si existe una secuencia de usuarios
+-- relacionados para llegar del primero al segundo.
 
 existeSecuenciaDeAmigos :: RedSocial -> Usuario -> Usuario -> Bool
 existeSecuenciaDeAmigos (us,rs,_) u1 u2 
@@ -216,9 +212,8 @@ existeSecuenciaDeAmigos (us,rs,_) u1 u2
           amigoDeU1 = head (amigosDe red u1)
           red2 = (us,eliminaRelacion rs u1 amigoDeU1,[])
 
-------------------------------------------------------------------------------------------------------------------------------
 
--- Opcional (?): eliminaRelacion
+-- Función auxiliar para existeSecuenciaDeAmigos.
 -- Dado un conjunto de relaciones y dos usuarios u1 y u2, elimina la relacion de amistad entre u1 y u2 si esta existiera.
 -- Esta funcion la voy a usar para poder hacer recursion sobre todas las amistades de un usuario en 
 -- la funcion existeSecuenciaDeAmigos
@@ -229,6 +224,10 @@ eliminaRelacion (r:rs) u1 u2
     | r == (u1,u2) || r == (u2,u1) = eliminaRelacion rs u1 u2
     | otherwise = r:(eliminaRelacion rs u1 u2)
 
+-- Dada una red social y dos usuarios, indica si los usuarios son amigos. Útil para verificar rápido.
+sonAmigos :: RedSocial -> Usuario -> Usuario -> Bool
+sonAmigos (_,rs,_) u1 u2 = elem (u1,u2) rs || elem (u2,u1) rs
+
 ------------------------------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------TEST------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------------
@@ -236,10 +235,11 @@ eliminaRelacion (r:rs) u1 u2
 -- Para comodidad del usuario, al emplear las funciones utilize "redTest" para probarlas
 redTest = (redSocialPrueba usuariosPrueba relacionesPrueba publicacionesPrueba)
 
+
 -- RED TEST se compone de los siguientes ejemplos:
 
 -- Usuarios que integran la red, con su id y avatar correspondientes:
-usuariosPrueba = [(1, "Jeferson"),(2, "Juan"),(3, "Karen"),(4, "Camila"),(5, "Micaela"), (6, "Jhonatan"), (7, "James"), (1, "Jeferson")]
+usuariosPrueba = [(1, "Jeferson"),(2, "Juan"),(3, "Karen"),(4, "Camila"),(5, "Micaela"), (6, "Jhonatan"), (7, "James"), (8, "Juan"), (1, "Jeferson")]
 -- Notar, que el primer y ultimo elemento de la lista son iguales,
 -- esto fue así para poner a prueba la eliminación de posibles elementos repetidos.
 
@@ -250,7 +250,7 @@ publicacionesPrueba = [((1,"Jeferson"), "Me gusta el verano",[]), ((4, "Camila")
 -- esto fue así para poner a prueba la eliminación de posibles repeticiones.
 
 -- Relaciones de amistad existentes entre los usuarios.
-relacionesPrueba = [ ((2, "Juan"),(3, "Karen")) , ((4, "Camila"),(6, "Jhonatan")) , ((6, "Jhonatan"),(4, "Camila")) , ((3, "Karen"), (1, "Jeferson")), ((1, "Jeferson"), (3, "Karen"))]
+relacionesPrueba = [ ((2, "Juan"),(3, "Karen")) , ((4, "Camila"),(6, "Jhonatan")) , ((6, "Jhonatan"),(4, "Camila")) , ((3, "Karen"), (1, "Jeferson")), ((1, "Jeferson"), (3, "Karen")) , ((3, "Karen"), (4, "Camila"))]
 
 -- Finalmente, se compilan las pruebas para dar forma a la red social.
 redSocialPrueba :: Set Usuario -> Set Relacion -> Set Publicacion -> RedSocial
@@ -289,11 +289,13 @@ redSocialPrueba usuariosPrueba relacionesPrueba publicacionesPrueba = (usuariosP
 -- Punto 8
 -- lesGustanLasMismasPublicaciones redTest (1, "Jeferson") (6, "Jhonatan") ~~>  True
 -- lesGustanLasMismasPublicaciones redTest (1, "Jeferson") (4, "Camila")   ~~>  False
+-- lesGustanLasMismasPublicaciones redTest (5, "Micaela") (8, "Juan")      ~~>  True
 
 -- Punto 9
 -- tieneUnSeguidorFiel redTest (4, "Camila")    ~~>  True
 -- tieneUnSeguidorFiel redTest (1, "Jeferson")  ~~>  False
 -- tieneUnSeguidorFiel redTest (7, "James")     ~~>  False
+-- tieneUnSeguidorFiel redTest (8, "Juan")      ~~>  False
 
 -- Opcional
 -- existeSecuenciaDeAmigos redTest (1, "Jeferson") (6, "Jhonatan") ~~>  False
